@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Classe Scrum</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#dfe7f5;--ink:#0f1d3a;--card:#fff;--hl:#ffe14d;--acc:#2b5cff;--ok:#138a5b;--bad:#d63a4a;--mut:#4b5a7a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1224;--ink:#eaf0ff;--card:#162042;--hl:#5a4d12;--acc:#7b98ff;--ok:#27b27a;--bad:#ef5a69;--mut:#a3b0d3}}
+:root[data-theme="dark"]{--bg:#0c1224;--ink:#eaf0ff;--card:#162042;--hl:#5a4d12;--acc:#7b98ff;--ok:#27b27a;--bad:#ef5a69;--mut:#a3b0d3}
+html,body,#root{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.45}
+#root{position:relative;overflow:hidden}
+.cv{position:absolute;inset:0}
+.ui{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:space-between;padding:12px;pointer-events:none;gap:10px}
+.ui>*{pointer-events:auto}
+.top{display:flex;justify-content:space-between;gap:8px}
+.chip{background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:4px 14px;font-weight:600;font-size:14px}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);padding:12px 14px;width:min(420px,100%);max-height:44%;overflow:auto;box-sizing:border-box;font-size:14px}
+.mid{align-self:flex-start;max-height:68%;width:min(420px,100%)}
+h1{margin:0 0 4px;font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em}
+h2{margin:0 0 6px;font-size:22px}
+p{margin:6px 0}
+.tag{display:inline-block;background:var(--hl);color:var(--ink);border:2px solid var(--ink);padding:1px 10px;border-radius:6px;font-size:13px;font-weight:600}
+.q{font-size:15px;font-weight:600}
+.btn{display:block;width:100%;text-align:left;font:inherit;font-size:14px;padding:7px 10px;margin:6px 0;border:2px solid var(--ink);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
+.btn:hover:not(:disabled){background:var(--hl)}
+.btn:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.btn:disabled{cursor:default}
+.btn.on{background:var(--hl)}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.pri{background:var(--acc);color:#fff;text-align:center;font-weight:800}
+.btn.pri:disabled{opacity:.4}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.roles .btn{margin:0;padding:10px}
+.roles b{font-size:16px;display:block}
+.fb{border-left:6px solid var(--ok);padding:2px 10px;margin:10px 0}
+.fb.r{border-color:var(--bad)}
+.bar{height:12px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar.over i{background:var(--bad)}
+.rec{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rec span{border:2px solid var(--ink);border-radius:8px;padding:1px 8px;font-size:13px}
+.mut{color:var(--mut);font-size:14px}
+.bar-t,.bar-b{position:absolute;left:0;right:0;height:0;background:#000;z-index:1;pointer-events:none;transition:height .6s ease}
+.bar-t{top:0}.bar-b{bottom:0}
+.cin .bar-t,.cin .bar-b{height:12%}
+.dlg{align-self:center;width:min(540px,100%);cursor:pointer}
+.hid .card{display:none}
+.snd{position:absolute;z-index:3;top:calc(54px + env(safe-area-inset-top,0px));right:12px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+.tog{position:absolute;z-index:3;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+@media (max-width:560px){.roles{grid-template-columns:1fr}.card{max-height:50%}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const {useState,useEffect,useRef}=React,h=React.createElement;
+const d=(c,...k)=>h('div',{className:c},...k);
+
+/* ---------- Game content: p = Professor (Scrum Master), s = Student (Developer) ---------- */
+const Q=[
+{ph:"Valeurs de l'agilité",sp:'sm',
+ L:"Les quatre valeurs de l'agilité : les individus et leurs interactions plutôt que les processus et les outils ; un logiciel opérationnel plutôt qu'une documentation exhaustive ; la collaboration avec le client plutôt que la négociation contractuelle ; l'adaptation au changement plutôt que le suivi d'un plan.",
+ p:{q:"UniPlan, semaine 2. Le client veut modifier l'écran de l'emploi du temps, mais un étudiant brandit le cahier des charges de 40 pages. Quelle valeur agile invoquez-vous ?",o:[["Suivre un plan plutôt que s'adapter au changement",0],["S'adapter au changement plutôt que suivre un plan",1],["La documentation plutôt qu'un logiciel opérationnel",0]]},
+ s:{q:"Votre équipe veut rédiger un rapport de 30 pages avant de coder l'écran de connexion. Quelle valeur agile s'y oppose ?",o:[["Les processus et les outils plutôt que les individus",0],["La négociation contractuelle plutôt que la collaboration",0],["Un logiciel opérationnel plutôt qu'une documentation exhaustive",1]]}},
+{ph:"Rôles Scrum",sp:'dev',
+ L:"Product Owner : responsable du « quoi » et des priorités (le Product Backlog). Scrum Master : coach de l'équipe, il lève les obstacles. Équipe de développement : auto-organisée, elle réalise l'incrément.",
+ p:{q:"Un étudiant demande : « Professeur, quelle fonctionnalité développons-nous en premier ? » Que répondez-vous ?",o:[["Je décide de l'ordre, c'est moi qui dirige le projet",0],["Celle que les développeurs trouvent la plus amusante",0],["C'est au Product Owner de décider. J'aide à clarifier l'objectif.",1]]},
+ s:{q:"Vous ne comprenez pas ce que le client attend de l'écran des notes. À qui demandez-vous ?",o:[["Au Scrum Master, qui possède le backlog",0],["Au Product Owner, qui possède le « quoi »",1],["À personne : vous devinez et vous codez",0]]}},
+{ph:"Product Backlog",sp:'po',
+ L:"Le Product Backlog est une liste ordonnée et évolutive de tout ce dont le produit a besoin, détenue par le Product Owner. Les éléments sont affinés en user stories : « En tant qu'étudiant, je veux..., afin de... ».",
+ p:{q:"Le backlog du Product Owner est trié selon celui qui crie le plus fort. Comment le coachez-vous ?",o:[["Trier par valeur métier et affiner en continu les éléments du haut",1],["Le figer : un backlog ne doit jamais changer",0],["Le trier par ordre alphabétique pour plus de clarté",0]]},
+ s:{q:"Le Product Backlog contient l'élément « Rendre l'appli jolie ». Que faites-vous ?",o:[["Commencer à choisir des couleurs tout de suite",0],["Demander au PO de l'affiner en user story avec des critères d'acceptation",1],["Le supprimer",0]]}},
+{ph:"Planification du sprint",sp:'sm',sprint:1,
+ L:"Le Sprint Backlog est l'ensemble des éléments choisis par l'équipe pour le sprint, avec un plan pour les réaliser. La capacité (vélocité) de l'équipe limite son engagement, et l'objectif du sprint donne le cap.",
+ p:{q:"Planification du sprint. Animez : c'est l'équipe, pas vous, qui tire les éléments dans le sprint d'une semaine. La vélocité est de 13 points."},
+ s:{q:"Planification du sprint. Tirez des éléments dans le Sprint Backlog. La vélocité de votre équipe est de 13 points."}},
+{ph:"Mêlée quotidienne",sp:'dev',
+ L:"La mêlée quotidienne (Daily Scrum) dure 15 minutes, à la même heure et au même endroit : ce que j'ai fait hier, ce que je ferai aujourd'hui, ce qui me bloque.",
+ p:{q:"À la mêlée quotidienne, un développeur lance un débat technique de 10 minutes. Vous...",o:[["Laissez faire, le débat est utile",0],["Rappelez le cadre de 15 minutes et renvoyez les détails à plus tard",1],["Annulez la mêlée",0]]},
+ s:{q:"C'est votre tour à la mêlée quotidienne. Quelle intervention est correcte ?",o:[["J'ai bien travaillé, tout va bien",0],["Laissez-moi expliquer chaque ligne de mon code...",0],["Hier : formulaire de connexion. Aujourd'hui : le relier à l'API. Bloqué : pas d'identifiants serveur.",1]]}},
+{ph:"Obstacles",sp:'dev',
+ L:"Le Scrum Master lève les obstacles. L'équipe les signale tôt et en toute transparence au lieu de les cacher.",
+ p:{q:"Le serveur du labo est en panne et deux étudiants ne peuvent pas tester. En tant que Scrum Master, vous...",o:[["Leur dites de contourner le problème discrètement",0],["Levez l'obstacle : contactez l'informatique tout de suite et prévenez l'équipe",1],["Attendez la revue du sprint",0]]},
+ s:{q:"Vous êtes bloqué : la clé d'API n'est jamais arrivée. Que faites-vous ?",o:[["Le signalez immédiatement au Scrum Master et à l'équipe",1],["Attendez en silence la fin du sprint",0],["Prenez en cachette une histoire plus facile",0]]}},
+{ph:"Revue du sprint",sp:'po',
+ L:"La revue du sprint est une démonstration de l'incrément terminé (Done) aux parties prenantes. Leurs retours alimentent le Product Backlog.",
+ p:{q:"Fin du sprint. À quoi sert la revue du sprint ?",o:[["À blâmer les développeurs en retard",0],["À présenter des diapositives sur les plans futurs",0],["À inspecter l'incrément fonctionnel avec le client et à adapter le backlog",1]]},
+ s:{q:"Vous présentez à la revue du sprint. Que montrez-vous ?",o:[["Un diaporama d'idées",0],["Une démo fonctionnelle de l'écran de l'emploi du temps",1],["Seulement le code source",0]]}},
+{ph:"Rétrospective",sp:'sm',
+ L:"La rétrospective est le moment où l'équipe examine sa façon de travailler (personnes, outils, processus) et choisit des améliorations pour le prochain sprint. Le Burndown Chart montre ensuite le travail restant en fonction du temps.",
+ p:{q:"Le sprint a été tendu. Comment animez-vous la rétrospective ?",o:[["Chercher le coupable",0],["Examiner personnes, outils et processus, puis convenir d'une ou deux améliorations",1],["La sauter, on n'a pas le temps",0]]},
+ s:{q:"En rétrospective, quelle contribution est la plus utile ?",o:[["« Marc a été trop lent. »",0],["« Rien à améliorer. »",0],["« Ajoutons une Definition of Done et travaillons en binôme sur les histoires difficiles. »",1]]}}
+];
+const S=[["Connexion",3],["Emploi du temps",5],["Notes de cours",5],["Notifications push",8],["Mode sombre",2],["Export PDF",5],["Chatbot IA",13]];
+const CAP=13;
+const CS=[
+[["Product Owner","Peut-on placer la recherche de salle au-dessus de l'emploi du temps ? Les étudiants le demandent chaque jour.",'po','po'],["Développeur","Mais le cahier des charges de 40 pages dit que l'emploi du temps passe en premier !",'devs','dev']],
+[["Développeur","Attends, qui décide de ce qu'on construit ? Et à qui pose-t-on nos questions ?",'devs','dev'],["Scrum Master","Bonne question. En Scrum, chaque rôle a son utilité.",'sm','sm']],
+[["Product Owner","Voici mon Product Backlog : toutes les idées que le client a jamais eues.",'board','po']],
+[["Scrum Master","Planification du sprint. Une semaine, une capacité limitée. Choisissez bien.",'board','sm'],["Développeur","La dernière fois, on a trop promis et rien terminé...",'devs','dev']],
+[["Narrateur","Mardi, 8 h 15. L'équipe se met en cercle pour la mêlée quotidienne.",'wide',null],["Développeur","Bon, un petit point de mon côté...",'devs','dev']],
+[["Développeur","Le serveur du labo est en panne ! Je ne peux rien tester.",'devs','dev'],["Narrateur","Un coéquipier bloqué est un signal. Quelqu'un doit agir.",'wide',null]],
+[["Narrateur","Vendredi, 10 h. Le sprint est terminé. Place à la rencontre avec le client.",'wide',null],["Client","Montrez-moi quelque chose qui marche, pas des promesses.",'po','po']],
+[["Scrum Master","Beau travail cette semaine. Regardons maintenant comment nous avons travaillé ensemble.",'sm','sm'],["Développeur","Certains jours étaient tendus, pour être honnête.",'devs','dev']]
+];
+const INTRO={
+p:[["Narrateur","Lundi, 8 h. Une salle de classe universitaire à Tunis. Aujourd'hui, vous êtes le professeur et le Scrum Master d'une équipe d'étudiants.",'door',null],["Vous, Scrum Master","Bonjour à tous. Pendant ce sprint, nous construisons UniPlan, une application d'emploi du temps et de notes, à la manière Scrum.",'sm','sm'],["Product Owner","J'ai parlé au client. Les étudiants perdent du temps à chercher leurs salles et leurs notes. J'ai une liste d'idées.",'po','po'],["Équipe","Nous sommes prêts. Par où commence-t-on ?",'devs','dev']],
+s:[["Narrateur","Lundi, 8 h. Une salle de classe universitaire à Tunis. Vous êtes développeur dans une équipe d'étudiants, assis au deuxième rang.",'door',null],["Scrum Master","Bonjour. Cette semaine, nous construisons UniPlan avec Scrum. Je ne donnerai pas d'ordres : je vous aiderai à bien travailler ensemble.",'sm','sm'],["Product Owner","J'ai parlé au client. Les étudiants perdent du temps à chercher leurs salles et leurs notes. J'ai une liste d'idées.",'po','po'],["Narrateur","Votre premier défi arrive.",'wide',null]]
+};
+const OUTRO=[["Narrateur","Le sprint est terminé. Le tableau est plein d'éléments Done.",'board',null],["Client","Merci ! UniPlan est exactement ce dont les étudiants avaient besoin.",'po','po'],["Scrum Master","Inspecter, adapter, recommencer. Voilà Scrum.",'sm','sm']];
+
+const IMG={"win": ["data:image/jpeg;base64,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", 105, 275]};
+/* ---------- 3D classroom ---------- */
+function Scene({mode,role,step,sp,shot,rst}){
+ const ref=useRef(),st=useRef({});st.current={mode,role,step,sp,shot,rst};
+ useEffect(()=>{
+  const el=ref.current,W=()=>el.clientWidth||1,H=()=>el.clientHeight||1;
+  const r=new THREE.WebGLRenderer({antialias:true});r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(W(),H());el.appendChild(r.domElement);
+  const sc=new THREE.Scene();sc.background=new THREE.Color(0x1b2240);
+  const cam=new THREE.PerspectiveCamera(58,W()/H(),.1,60);
+  sc.add(new THREE.HemisphereLight(0xeaf2ff,0xb4bbd0,.85));
+  const dl=new THREE.DirectionalLight(0xfff1d0,.5);dl.position.set(-8,8,2);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);dl.shadow.bias=-.0006;Object.assign(dl.shadow.camera,{left:-14,right:14,top:14,bottom:-14,near:1,far:40});dl.shadow.camera.updateProjectionMatrix();sc.add(dl);
+  const mat=c=>new THREE.MeshLambertMaterial({color:c});
+  const box=(w,hh,dp,c,x,y,z,p=sc)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,dp),mat(c));m.position.set(x,y,z);p.add(m);return m};
+  const lab=(t,x,y,z,s=1,bg='rgba(15,29,58,.85)')=>{const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,256,64);g.fillStyle='#fff';let f=28;g.font='bold 28px sans-serif';while(g.measureText(t).width>236&&f>10){f--;g.font='bold '+f+'px sans-serif'}g.textAlign='center';g.textBaseline='middle';g.fillText(t,128,34);const s2=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s2.scale.set(2*s,.5*s,1);s2.position.set(x,y,z);return s2};
+  // room (inspired by the UniPlan concept boards)
+  const TL=new THREE.TextureLoader(),tx={},ar={};for(const k in IMG){tx[k]=TL.load(IMG[k][0]);ar[k]=IMG[k][1]/IMG[k][2]}
+  const glow=(w,hh,dp,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,dp),new THREE.MeshBasicMaterial({color:c}));m.position.set(x,y,z);sc.add(m);return m};
+  const cyl=(r1,r2,hh,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,hh,12),mat(c));m.position.set(x,y,z);sc.add(m);return m};
+  const cv=(w,hh,cw,ch,fn,x,y,z)=>{const c=document.createElement('canvas');c.width=cw;c.height=ch;fn(c.getContext('2d'),cw,ch);const q=new THREE.Mesh(new THREE.PlaneGeometry(w,hh),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true}));q.position.set(x,y,z);sc.add(q);return q};
+  const logo=(g,W,H,sub)=>{g.fillStyle='#1f3b73';g.beginPath();g.moveTo(W*.5,H*.04);g.lineTo(W*.68,H*.17);g.lineTo(W*.5,H*.3);g.lineTo(W*.32,H*.17);g.fill();g.textAlign='center';g.font='800 '+H*.28+'px sans-serif';g.fillText('UniPlan',W/2,H*.6);g.fillStyle='#3b5998';g.font=H*.09+'px sans-serif';g.fillText(sub,W/2,H*.8)};
+  const ft=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.fillStyle='#d9dce8';g.fillRect(0,0,64,64);g.strokeStyle='#b4bace';g.lineWidth=2;g.strokeRect(0,0,64,64);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(14,20);return t})();
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(14,20),new THREE.MeshLambertMaterial({map:ft}));fl.rotation.x=-Math.PI/2;fl.position.set(0,0,2);sc.add(fl);
+  box(14,6,.2,0xdfe5f5,0,3,-7);box(14,6,.2,0xdfe5f5,0,3,12);box(.2,6,20,0xd3dbee,-7,3,2);box(.2,6,20,0xd3dbee,7,3,2);box(14,.2,20,0xe8ecf6,0,6.1,2);
+  box(14,.5,.05,0x1f3b73,0,.25,-6.88);
+  [-3,3].forEach(x=>[-4,0,4,8].forEach(z=>glow(1.4,.04,.8,0xfffbe8,x,5.98,z)));
+  box(.55,.18,.4,0xf3f4f6,0,5.3,.5);box(.05,.7,.05,0x6b7280,0,5.65,.5);glow(.12,.1,.05,0x222836,0,5.3,.28);
+  [-3.5,.5,4.5].forEach(z=>{box(.12,2.7,2.9,0x1f3b73,-6.9,3.1,z);{const wp=new THREE.Mesh(new THREE.PlaneGeometry(2.7,2.5),new THREE.MeshBasicMaterial({map:tx.win}));wp.rotation.y=Math.PI/2;wp.position.set(-6.8,3.1,z);sc.add(wp)}box(.14,2.5,.07,0x1f3b73,-6.83,3.1,z);box(.14,.07,2.7,0x1f3b73,-6.83,3.1,z)});
+  box(.25,3,1.4,0x9a6b3c,6.9,1.5,-2);box(.27,.9,.25,0xb7dcff,6.9,2.1,-2);box(.12,.05,.05,0xc0c4cc,6.78,1.3,-1.5);
+  // sprint board
+  box(8.4,3.4,.1,0x31405c,0,3,-6.85);box(6,.08,.12,0x31405c,0,1.35,-6.78);
+  cv(8,3.2,1024,410,(g,W,H)=>{g.fillStyle='#f4f7fb';g.fillRect(0,0,W,H);g.strokeStyle='#9aa7bd';g.lineWidth=3;[358,666].forEach(x=>{g.beginPath();g.moveTo(x,90);g.lineTo(x,H-20);g.stroke()});
+   [['À faire',205,'#60a5fa'],['En cours',512,'#fbbf24'],['Terminé',819,'#4ade80']].forEach(([t,x,c])=>{g.fillStyle=c;g.beginPath();(g.roundRect||g.rect).call(g,x-90,20,180,56,28);g.fill();g.fillStyle='#14305e';g.font='bold 34px sans-serif';g.textAlign='center';g.fillText(t,x,59)})},0,3,-6.79);
+  cv(2.3,1.55,512,345,(g,W,H)=>logo(g,W,H,'Learn \u2022 Plan \u2022 Succeed'),-5.6,3.6,-6.88);
+  cv(1.2,2.6,300,650,(g,W,H)=>{g.fillStyle='#0f2d5b';g.fillRect(0,0,W,H);g.fillStyle='#fff';g.textAlign='center';g.font='italic 700 52px sans-serif';['Petits','pas,','grands','résultats'].forEach((t,k)=>g.fillText(t,W/2,200+k*100))},5.3,2.8,-6.88);
+  cv(.7,.7,128,128,g=>{g.fillStyle='#fff';g.beginPath();g.arc(64,64,58,0,6.3);g.fill();g.strokeStyle='#1f3b73';g.lineWidth=8;g.stroke();g.lineWidth=5;g.beginPath();g.moveTo(64,64);g.lineTo(64,28);g.moveTo(64,64);g.lineTo(92,74);g.stroke()},5.3,4.8,-6.88);
+  const N=[];for(let k=0;k<9;k++)N.push(box(.6,.5,.04,[0xffe14d,0xff9fc0,0x8fd0ff,0xa6f0b4][k%4],-2.4+((k%3)-1)*.7,3.55-Math.floor(k/3)*.62,-6.7));
+  // props: lectern, plants, bookshelf, desks
+  box(1.6,.95,.7,0xc98f55,-5.3,.475,-5.9);box(1.5,.75,.02,0x1f3b73,-5.3,.45,-5.54);box(.5,.02,.35,0x2b3445,-5.3,.96,-5.9);const ls=box(.5,.3,.02,0x1d2a4a,-5.3,1.1,-6.05);ls.rotation.x=-.2;
+  const plant=(x,z)=>{cyl(.22,.18,.4,0xf3f4f6,x,.2,z);for(let k=0;k<7;k++){const a=k*.9,l=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),mat(k%2?0x2f8f4e:0x3fae63));l.scale.set(.11,.38,.11);l.position.set(x+Math.cos(a)*.14,.8,z+Math.sin(a)*.14);l.rotation.set(Math.sin(a)*.5,0,-Math.cos(a)*.5);sc.add(l)}};
+  plant(-6.3,-6.3);plant(6.3,-6.3);plant(-6.3,8);
+  box(.5,2,1.3,0xb98251,6.55,1,-4.8);[.4,1,1.6].forEach((y,r)=>{box(.52,.04,1.3,0x8a5a2b,6.55,y+.3,-4.8);for(let k=0;k<5;k++)box(.3,.38,.15,[0x1f3b73,0x3b82f6,0xf59e0b,0x10b981,0xef4444][(k+r)%5],6.5,y+.5,-5.3+k*.22)});
+  const desk=(x,z)=>{box(1.5,.07,.7,0xd9a066,x,.78,z);[-1,1].forEach(s=>{box(.06,.76,.06,0x2f3f5c,x+s*.68,.38,z-.28);box(.06,.76,.06,0x2f3f5c,x+s*.68,.38,z+.28);box(.05,.5,.05,0x4b5563,x+s*.22,.25,z+.62)});
+   box(.46,.02,.32,0x2b3445,x,.835,z);const s2=box(.46,.3,.02,0x2b6cf0,x,.99,z+.14);s2.rotation.x=-.2;
+   box(.55,.07,.5,0x1f3b73,x,.5,z+.62);box(.55,.5,.06,0x1f3b73,x,.8,z+.9)};
+  [[-3,.5],[0,.5],[3,.5],[-3,3],[0,3],[3,3]].forEach(([x,z])=>desk(x,z));
+  // characters (stylized, based on the character sheets)
+  const P=[],D={top:0x1e3a8a,pants:0x374151,shoe:0xdbe4ff,hair:0x2b2b2b};
+  const person=(id,x,z,o,tag,stand)=>{
+   o={...D,...o};
+   const g=new THREE.Group(),m=mat(o.top),y0=stand?.85:.5,hy=stand?1.7:1.4,sk=0xf6c9a8;
+   const part=(geo,c,px,py,pz,mm)=>{const q=new THREE.Mesh(geo,mm||mat(c));q.position.set(px,py,pz);g.add(q);return q};
+   const B=(w,hh,dp)=>new THREE.BoxGeometry(w,hh,dp),Cy=(a,b,hh)=>new THREE.CylinderGeometry(a,b,hh,10),Sp=r=>new THREE.SphereGeometry(r,12,10);
+   [-1,1].forEach(s=>{
+    if(stand){part(Cy(.1,.09,.85),o.pants,s*.12,.43,0);part(B(.16,.08,.3),o.shoe,s*.12,.04,-.04)}
+    else{part(B(.17,.16,.5),o.pants,s*.12,.52,-.25);part(Cy(.08,.07,.45),o.pants,s*.12,.25,-.5);part(B(.16,.08,.28),o.shoe,s*.12,.04,-.55)}
+    const a=part(Cy(.065,.06,stand?.6:.58),0,s*.33,stand?1.12:.96,stand?0:-.25,m);
+    if(stand)a.rotation.z=-s*.08;else a.rotation.x=-2.1;
+    part(Sp(.065),sk,s*.33,.85,stand?0:-.5)});
+   part(B(.5,.62,.3),0,0,y0+.32,0,m);
+   if(o.prof){part(B(.17,.52,.02),0xe6f0ff,0,y0+.31,-.155);part(B(.03,.38,.02),0x3b82f6,0,y0+.36,-.17);part(B(.1,.13,.02),0xffffff,0,y0+.2,-.18);part(B(.2,.28,.03),0x1a1f2b,.38,.95,-.06)}
+   else{part(B(.12,.09,.01),0xe5e7eb,.1,y0+.42,-.155);part(B(.38,.5,.2),0x1e2a44,0,y0+.32,.25);part(B(.36,.1,.14),0,0,y0+.66,.12,m)}
+   part(Sp(.2),sk,0,hy,0).scale.y=1.08;
+   part(new THREE.SphereGeometry(.215,18,10,0,6.283,0,1.25),o.hair,0,hy+.02,.01);
+   if(o.long)part(B(.4,.5,.1),o.hair,0,hy-.2,.15);else part(B(.38,.16,.1),o.hair,0,hy+.02,.12);
+   [-1,1].forEach(s=>{part(Sp(.026),0x1a1a1a,s*.075,hy-.01,-.185);if(o.glasses)part(new THREE.TorusGeometry(.05,.01,6,14),0x111111,s*.075,hy-.01,-.195)});
+   if(o.glasses)part(B(.05,.01,.01),0x111111,0,hy-.005,-.197);
+   part(B(.07,.014,.01),0xb4584f,0,hy-.09,-.192);
+   g.position.set(x,0,z);if(stand){g.scale.setScalar(1.05);g.rotation.y=Math.PI}
+   const t=lab(tag,0,stand?2.3:2.05,0,.5);g.add(t);sc.add(g);
+   const oo={id,g,m,t,ph:Math.random()*6};P.push(oo);return oo};
+  person('po',-3,1.1,{top:0xf59e0b,hair:0x3a2a1f},'Product Owner');
+  person('d1',0,1.1,{},'Développeur');person('d2',3,1.1,{top:0x3b82f6,hair:0x6b4226,long:1},'Développeur');
+  person('d3',-3,3.6,{hair:0x1c1c1c},'Développeur');person('d4',3,3.6,{top:0x4b5563,hair:0x4a3220},'Développeur');
+  const d0=person('d0',0,3.6,{},'Développeur');
+  const sm=person('sm',-4.9,-4.8,{top:0x1f3b73,shoe:0x8b5e3c,prof:1,glasses:1},'Scrum Master',1);
+  const you=lab('VOUS',0,2.62,0,.5,'#138a5b');sm.g.add(you);
+  // loop
+  sc.traverse(o=>{if(o.isMesh&&o.material.isMeshLambertMaterial){o.receiveShadow=true;if(o.geometry.type!=='PlaneGeometry'&&o.position.y<2)o.castShadow=true}});
+  const T=new THREE.Vector3(),C=new THREE.Vector3(),Lk=new THREE.Vector3(0,2,-3),T2=new THREE.Vector3();
+  let id,t0=performance.now(),lr=0;
+  const SH={wide:[0,3.4,8,0,1.8,-3],door:[1.5,1.8,3.5,6,1.5,-1.5],board:[0,2.6,-1,0,3,-7],sm:[-1.5,1.9,-2,-4.9,1.6,-4.8],po:[-1,2,4,-3,1.7,1.1],devs:[1.5,2.2,5.5,1.5,1.5,1.1]};
+  const loop=()=>{id=requestAnimationFrame(loop);
+   const t=(performance.now()-t0)/1000,s=st.current,far=cam.aspect<1?3.4:0,play=s.mode==='play';
+   if(s.shot&&SH[s.shot]){const o=SH[s.shot];T.set(o[0]+Math.sin(t*.3)*.25,o[1],o[2]+(o[2]>6?far:0)),C.set(o[3],o[4],o[5])}
+   else if(!play)T.set(Math.sin(t*.2)*3,3.4,6.5+far),C.set(0,2,-3);
+   else if(s.role==='s')T.set(0,1.95,3.7+far),C.set(Math.sin(t*.3)*.4,2.4,-5);
+   else T.set(-2.5,4.2,6.8+far),C.set(0,1.6,-2.5);
+   cam.position.lerp(T,.05);Lk.lerp(C,.05);cam.lookAt(Lk);
+   if(s.rst!==lr){lr=s.rst;sm.g.position.set(6.2,0,-2)}
+   sm.g.position.x+=(-4.9-sm.g.position.x)*.012;sm.g.position.z+=(-4.8-sm.g.position.z)*.012;
+   P.forEach(p=>{const act=play&&s.sp&&(p.id===s.sp||(s.sp==='dev'&&p.id[0]==='d'));
+    p.g.position.y=Math.sin(t*(act?7:1.5)+p.ph)*(act?.07:.015);p.m.emissive.setHex(act?0x1a2238:0);p.t.visible=!play||(s.shot!=='board'&&act&&(!!s.shot||p.id==='po'||p.id==='sm'))});
+   d0.g.visible=!(play&&s.role==='s');you.visible=play&&s.role==='p';
+   const dn=Math.round(s.step*9/8),cnt=[0,0,0];
+   N.forEach((n,k)=>{const c=k<dn?2:(k<dn+2&&s.step>0?1:0),j=cnt[c]++;
+    n.position.lerp(T2.set(-2.4+c*2.4+((j%3)-1)*.7,3.55-Math.floor(j/3)*.62,-6.7),.08)});
+   r.render(sc,cam)};
+  loop();
+  const rs=()=>{r.setSize(W(),H());cam.aspect=W()/H();cam.updateProjectionMatrix()};
+  window.addEventListener('resize',rs);
+  return()=>{cancelAnimationFrame(id);window.removeEventListener('resize',rs);r.dispose();el.removeChild(r.domElement)};
+ },[]);
+ return h('div',{className:'cv',ref});
+}
+
+/* ---------- Burndown chart ---------- */
+function Burn({tot,score}){
+ const W=340,Hh=190,Pd=32,lag=(100-score)/100*tot*.6,ds=[0,1,2,3,4,5];
+ const ideal=ds.map(k=>tot*(1-k/5));
+ const act=ds.map(k=>k==0?tot:k==5?Math.round(lag*.35):Math.max(0,Math.round(tot*(1-k/5)+lag*Math.sin(k*Math.PI/5))));
+ const X=k=>Pd+k*(W-Pd-10)/5,Y=v=>Hh-Pd-v*(Hh-Pd-14)/Math.max(tot,1);
+ const pl=a=>a.map((v,k)=>X(k)+','+Y(v)).join(' ');
+ return h('svg',{viewBox:`0 0 ${W} ${Hh}`,width:'100%',role:'img','aria-label':'Burndown Chart'},
+  h('line',{x1:Pd,y1:Y(0),x2:W-10,y2:Y(0),stroke:'currentColor'}),h('line',{x1:Pd,y1:Y(tot),x2:Pd,y2:Y(0),stroke:'currentColor'}),
+  h('polyline',{points:pl(ideal),fill:'none',stroke:'currentColor',strokeDasharray:'5 4',opacity:.6}),
+  h('polyline',{points:pl(act),fill:'none',stroke:'var(--acc)',strokeWidth:3}),
+  act.map((v,k)=>h('circle',{key:k,cx:X(k),cy:Y(v),r:4,fill:'var(--acc)'})),
+  ds.map(k=>h('text',{key:k,x:X(k),y:Hh-14,fontSize:11,textAnchor:'middle',fill:'currentColor'},'Jour '+k)),
+  h('text',{x:Pd+6,y:12,fontSize:11,fill:'currentColor'},'Points restants (pointillés = idéal)'),
+  h('text',{x:Pd-6,y:Y(tot)+4,fontSize:11,textAnchor:'end',fill:'currentColor'},tot));
+}
+
+/* ---------- Audio (generated with Web Audio, no files needed) ---------- */
+const AU=(()=>{
+ let c,mg,mus,nb,on=true,run=false,nextT=0,ci=0;
+ const ctx=()=>{if(!c){c=new(window.AudioContext||window.webkitAudioContext)();mg=c.createGain();mg.gain.value=on?.9:0;mg.connect(c.destination);
+  mus=c.createGain();mus.gain.value=.8;const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1600;
+  const dl=c.createDelay();dl.delayTime.value=.42;const fb=c.createGain();fb.gain.value=.35;const wet=c.createGain();wet.gain.value=.3;
+  mus.connect(lp);lp.connect(mg);lp.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(mg);
+  const L=c.sampleRate*2;nb=c.createBuffer(1,L,c.sampleRate);const d=nb.getChannelData(0);let p=0;for(let i=0;i<L;i++){p=p*.97+(Math.random()*2-1)*.03;d[i]=p*6}}
+  if(c.state==='suspended')c.resume();return c};
+ const tone=(f,t,dur,type,vol,dest)=>{const x=ctx(),o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(dest||mg);o.start(t);o.stop(t+dur+.05)};
+ const nz=(t,dur,vol,f0,f1)=>{const x=ctx(),s=x.createBufferSource();s.buffer=nb;const f=x.createBiquadFilter();f.type='bandpass';f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+dur);const g=x.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(mg);s.start(t);s.stop(t+dur)};
+ const SF={click:t=>tone(660,t,.07,'triangle',.12),
+  ok:t=>[523,659,784,1047].forEach((f,k)=>tone(f,t+k*.08,.35,'sine',.16)),
+  bad:t=>{tone(196,t,.25,'sawtooth',.08);tone(147,t+.15,.35,'sawtooth',.08)},
+  whoosh:t=>nz(t,.5,.35,300,3000),
+  stamp:t=>{tone(120,t,.18,'sine',.35);nz(t,.1,.25,800,200)},
+  blip:t=>tone(380+Math.random()*120,t,.03,'square',.025),
+  fan:t=>[523,659,784,1047,1319].forEach((f,k)=>{tone(f,t+k*.13,.6,'triangle',.18);tone(f/2,t+k*.13,.6,'sine',.1)})};
+ const CH=[[261.6,329.6,392,493.9],[220,261.6,329.6,392],[174.6,220,261.6,329.6],[196,246.9,293.7,392]],PN=[523.3,587.3,659.3,784,880,1046.5];
+ const pad=(f,t,d)=>{const x=ctx(),o=x.createOscillator(),g=x.createGain();o.type='triangle';o.frequency.value=f;o.detune.value=(Math.random()-.5)*8;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.045,t+1.2);g.gain.linearRampToValueAtTime(0,t+d);o.connect(g);g.connect(mus);o.start(t);o.stop(t+d+.1)};
+ const sched=()=>{if(!run)return;const x=ctx();while(nextT<x.currentTime+8){const ch=CH[ci%4];ch.forEach(f=>pad(f,nextT,4.4));tone(ch[0]/2,nextT,3.8,'sine',.12,mus);
+  for(let k=0;k<8;k++)if(Math.random()<.4)tone(PN[Math.floor(Math.random()*PN.length)],nextT+k*.5,1.2,'sine',.07,mus);nextT+=4;ci++}};
+ return{start(){if(run)return;const x=ctx();run=true;nextT=x.currentTime+.2;
+   const s=x.createBufferSource();s.buffer=nb;s.loop=true;const f=x.createBiquadFilter();f.type='lowpass';f.frequency.value=500;const g=x.createGain();g.gain.value=.05;s.connect(f);f.connect(g);g.connect(mg);s.start();
+   sched();setInterval(sched,1000)},
+  sfx(n){if(!on)return;const x=ctx();SF[n](x.currentTime+.01)},
+  mute(m){on=!m;if(c)mg.gain.setTargetAtTime(on?.9:0,c.currentTime,.1)},
+  vis(hd){if(c)hd?c.suspend():c.resume()}}
+})();
+document.addEventListener('visibilitychange',()=>AU.vis(document.hidden));
+
+/* ---------- Cutscene dialogue ---------- */
+function Cut({line,onNext,onSkip}){
+ const txt=line[1],rm=matchMedia('(prefers-reduced-motion:reduce)').matches,[n,setN]=useState(0);
+ useEffect(()=>{if(rm){setN(txt.length);return}setN(0);let kk=0;const iv=setInterval(()=>{if(kk<txt.length){kk++;if(kk%3===0)AU.sfx('blip')}setN(x=>Math.min(x+1,txt.length))},24);return()=>clearInterval(iv)},[txt]);
+ const full=n>=txt.length,go=()=>full?onNext():setN(txt.length);
+ useEffect(()=>{const k=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();go()}else if(e.key==='Escape')onSkip()};addEventListener('keydown',k);return()=>removeEventListener('keydown',k)});
+ return h(React.Fragment,null,
+  d('top',d('chip','Scène'),h('button',{className:'chip',style:{font:'inherit',color:'var(--ink)',cursor:'pointer'},onClick:onSkip},'Passer la scène')),
+  h('div',{className:'card dlg',role:'button',tabIndex:0,onClick:go},
+   h('span',{className:'tag'},line[0]),
+   h('p',{className:'q'},h('span',null,txt.slice(0,n)),h('span',{style:{visibility:'hidden'}},txt.slice(n))),
+   h('p',{className:'mut'},full?'Cliquez ou appuyez sur Espace pour continuer':'Cliquez pour tout afficher')));
+}
+
+/* ---------- App ---------- */
+function App(){
+ const[m,setM]=useState('menu'),[role,setRole]=useState('p'),[i,setI]=useState(0),[pk,setPk]=useState(null),[fb,setFb]=useState(null),[sc,setSc]=useState(0),[sel,setSel]=useState([]),[res,setRes]=useState([]),[cut,setCut]=useState(null),[rst,setRst]=useState(0),[hid,setHid]=useState(false),[snd,setSnd]=useState(true);
+ const q=Q[i],rq=q[role],tot=sel.reduce((a,k)=>a+S[k][1],0);
+ const start=r=>{AU.start();AU.sfx('click');setRole(r);setM('play');setRst(x=>x+1);setCut({L:[...INTRO[r],...CS[0]],k:0,end:'play'});setI(0);setPk(null);setFb(null);setSc(0);setSel([]);setRes([])};
+ const pick=k=>{if(pk!==null)return;const ok=!!rq.o[k][1];AU.sfx(ok?'ok':'bad');setPk(k);setSc(s=>s+(ok?10:0));setRes(r=>[...r,ok?1:0]);setFb({ok,t:ok?'Correct ! +10':'Pas tout à fait. +0'})};
+ const commit=()=>{const ok=tot<=CAP,must=sel.includes(0)&&sel.includes(1),pts=!ok?0:must?30:15;
+  setPk(true);AU.sfx('stamp');setTimeout(()=>AU.sfx(pts>=30?'ok':pts?'click':'bad'),200);setSc(s=>s+pts);setRes(r=>[...r,pts>=30?1:pts?.5:0]);
+  setFb({ok:pts>=30,t:!ok?`Surengagement (${tot}/${CAP} points). Une équipe ne tire que ce qu'elle peut terminer. +0`:must?"Excellent Sprint Backlog : les éléments les plus précieux, dans la capacité. +30":"Dans la capacité, mais les éléments les plus précieux (Connexion et Emploi du temps) manquent. +15"})};
+ const next=()=>{AU.sfx('whoosh');if(i===Q.length-1)setCut({L:OUTRO,k:0,end:'end'});else{setHid(false);setI(i+1);setPk(null);setFb(null);setCut({L:CS[i+1],k:0,end:'play'})}};
+ const skip=()=>{const e=cut.end;setCut(null);if(e==='end'){setM('end');AU.sfx('fan')}else AU.sfx('click')};
+ const adv=()=>cut.k+1<cut.L.length?(AU.sfx('click'),setCut({...cut,k:cut.k+1})):skip();
+ const stepN=m==='end'||(cut&&cut.end==='end')?8:i,sprintTot=sel.length?tot:CAP;
+ const rank=sc>=85?'Scrum Master':sc>=55?'Praticien Scrum':'Débutant Scrum';
+ let ui;
+ if(m==='menu')ui=[d('top'),d('card mid',
+  h('h1',null,'Classe Scrum'),
+  h('p',null,"Votre classe construit UniPlan, une application d'emploi du temps et de notes. Menez le projet à la manière Scrum : 8 quêtes, des valeurs agiles à la rétrospective."),
+  h('p',{className:'mut'},'Choisissez votre rôle :'),
+  d('roles',
+   h('button',{className:'btn',onClick:()=>start('p')},h('b',null,'Professeur'),"Vous êtes le Scrum Master : coachez l'équipe et levez les obstacles."),
+   h('button',{className:'btn',onClick:()=>start('s')},h('b',null,'Étudiant'),'Vous êtes développeur : planifiez, construisez et présentez le produit.')))];
+ else if(m==='play'&&cut)ui=[h(Cut,{key:'cut',line:cut.L[cut.k],onNext:adv,onSkip:skip})];
+ else if(m==='play')ui=[d('top',d('chip',role==='p'?'Professeur, Scrum Master':'Étudiant, Développeur'),d('chip','Score '+sc)),
+  d('card',
+   h('span',{className:'tag'},`Quête ${i+1} sur ${Q.length} : ${q.ph}`),
+   h('p',{className:'q'},rq.q),
+   q.sprint?[
+    S.map((s,k)=>h('button',{key:k,className:'btn'+(sel.includes(k)?' on':''),disabled:!!fb,onClick:()=>{AU.sfx('click');setSel(a=>a.includes(k)?a.filter(x=>x!==k):[...a,k])}},`${sel.includes(k)?'[x]':'[ ]'} ${s[0]} (${s[1]} pts)`)),
+    d('bar'+(tot>CAP?' over':''),h('i',{style:{width:Math.min(100,tot/CAP*100)+'%'}})),
+    h('p',{className:'mut'},`Sprint Backlog : ${tot} sur ${CAP} points`),
+    !fb&&h('button',{className:'btn pri',disabled:!sel.length,onClick:commit},'Valider le Sprint Backlog')]
+   :rq.o.map((o,k)=>h('button',{key:k,className:'btn'+(pk!==null?(o[1]?' ok':k===pk?' bad':''):''),disabled:pk!==null,onClick:()=>pick(k)},o[0])),
+   fb&&d('fb'+(fb.ok?'':' r'),h('b',null,fb.t),h('p',null,q.L)),
+   fb&&h('button',{className:'btn pri',onClick:next},i===Q.length-1?'Voir les résultats du sprint':'Quête suivante'))];
+ else ui=[d('top',d('chip',role==='p'?'Professeur, Scrum Master':'Étudiant, Développeur'),d('chip','Score '+sc)),
+  d('card mid',
+   h('h2',null,`${rank} : ${sc} sur 100`),
+   h('p',{className:'mut'},'Votre burndown du sprint (plus vous êtes proche des pointillés, meilleur a été le sprint) :'),
+   h(Burn,{tot:sprintTot,score:sc}),
+   d('rec',Q.map((x,k)=>h('span',{key:k},(res[k]===1?'✔ ':res[k]===.5?'~ ':'✘ ')+x.ph))),
+   h('button',{className:'btn pri',onClick:()=>{AU.sfx('click');setM('menu')}},'Rejouer avec un autre rôle'))];
+ const cl=cut&&cut.L[cut.k];
+ return h('div',{style:{height:'100%'},className:(cut?'cin ':'')+(hid?'hid':'')},h(Scene,{mode:m==='menu'?'menu':'play',role,step:stepN,rst,shot:cl?cl[2]:null,sp:cl?cl[3]:(m==='play'?q.sp:null)}),h('div',{className:'bar-t'}),h('div',{className:'bar-b'}),h('div',{className:'ui'},...ui),m==='play'&&!cut&&h('button',{className:'chip tog',onClick:()=>setHid(x=>!x)},hid?'Afficher le panneau':'Masquer le panneau'),h('button',{className:'chip snd',onClick:()=>{AU.mute(snd);setSnd(!snd)}},snd?'🔊 Son':'🔇 Muet'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+</script>
+</body>
+</html>
